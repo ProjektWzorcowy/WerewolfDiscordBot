@@ -15,6 +15,7 @@ class Player:
     def action(self):
         pass  # To be implemented by subclasses
 
+
 class Villager(Player):
     def action(self):
         # Villagers typically do not perform special actions at night

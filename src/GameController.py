@@ -1,5 +1,5 @@
-from src import Game
-from src import Players
+from src.Game import Game
+from src.Game import Players
 
 class GameController:
     def __init__(self):

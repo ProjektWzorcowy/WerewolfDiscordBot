@@ -2,7 +2,10 @@ from src import Players
 from src import GameController
 
 class Game:
+    #players are stored as their ids
     def __init__(self):
+        self.owner = None
+        self.is_Started = False
         self.players = []
         self.phase = "waiting"  # waiting, night, day
         self.votes = {}
@@ -39,8 +42,8 @@ class Game:
     def check_game_over(self):
         #implemented by 
         pass
-        
-    
+
+
 class SpecificGameType(Game):
     def check_game_over(self):
         werewolves = [p for p in self.players if isinstance(p, Players.Werewolf) and p.state == Players.PlayerState.ALIVE]
