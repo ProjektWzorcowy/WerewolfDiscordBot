@@ -34,3 +34,7 @@ class Sage(Player):
             return f"Sage {self.id} sees that {target.id} is a Werewolf."
         else:
             return f"Sage {self.id} sees that {target.id} is not a Werewolf."
+
+class Medic(Player):
+    def action(self, targert):
+        return "..."

@@ -1,11 +1,8 @@
-from src import Players
-from src import GameController
+from src.Players import *
+
 
 class Game:
-    #players are stored as their ids
     def __init__(self):
-        self.owner = None
-        self.is_Started = False
         self.players = []
         self.phase = "waiting"  # waiting, night, day
         self.votes = {}
@@ -22,7 +19,7 @@ class Game:
         print("Day begins. Players discuss and vote.")
         
     def vote(self, voter, target):
-        if voter.state == Players.PlayerState.ALIVE and target.state == Players.PlayerState.ALIVE:
+        if voter.state == PlayerState.ALIVE and target.state == PlayerState.ALIVE:
             self.votes[voter.id] = target.id
 
     def tally_votes(self):
@@ -46,8 +43,8 @@ class Game:
 
 class SpecificGameType(Game):
     def check_game_over(self):
-        werewolves = [p for p in self.players if isinstance(p, Players.Werewolf) and p.state == Players.PlayerState.ALIVE]
-        villagers = [p for p in self.players if not isinstance(p, Players.Werewolf) and p.state == Players.PlayerState.ALIVE]
+        werewolves = [p for p in self.players if isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
+        villagers = [p for p in self.players if not isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
         
         if not werewolves:
             print("Villagers win!")

@@ -1,23 +1,42 @@
 from src.Game import Game
-from src.Game import Players
+from src.Players import *
+import random
+
 
 class GameController:
     def __init__(self):
+        self.is_Started = False
+        self.owner_id = None
+        self.players_ids = []
         self.game = Game()
 
-    def invite(self, id, role):
-        # Note: We probably should make it so player is assigned a role automatically, randomly.
-        if role == "Villager":
-            player = Players.Villager(id)
-        elif role == "Werewolf":
-            player = Players.Werewolf(id)
-        elif role == "Sage":
-            player = Players.Sage(id)
-        else:
-            raise ValueError("Unknown role")
+    def set_started_status(self):
+        self.is_Started = True
 
-        self.game.add_player(player)
-        print(f"Player {id} with role {role} has been added.")
+    def set_owner_id(self, owner_id):
+        self.owner_id = owner_id
+
+    def add_player_id(self, player_id):
+        self.players_ids.append(player_id)
+
+    def set_roles(self):
+        werewolves_number = 3 if len(self.players_ids) >= 16 else 2
+
+        sage_id = random.choice(self.players_ids)
+        self.game.add_player(Sage(sage_id))
+        self.players_ids.remove(sage_id)
+
+        medic_id = random.choice(self.players_ids)
+        self.game.add_player(Medic(medic_id))
+        self.players_ids.remove(medic_id)
+
+        for _ in range(werewolves_number):
+            werewolf_id = random.choice(self.players_ids)
+            self.game.add_player(Werewolf(werewolf_id))
+            self.players_ids.remove(werewolf_id)
+
+        for player_id in self.players_ids:
+            self.game.add_player(Villager(player_id))
 
     def start_game(self):
         print("Game started. Let the hunt begin!")
