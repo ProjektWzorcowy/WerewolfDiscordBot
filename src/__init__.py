@@ -1,3 +1,4 @@
+'''
 import os
 import importlib
 
@@ -7,3 +8,4 @@ files = [f[:-3] for f in os.listdir(current_dir) if f.endswith(".py") and f != "
 
 for file in files:
     importlib.import_module(f"src.{file}")
+'''

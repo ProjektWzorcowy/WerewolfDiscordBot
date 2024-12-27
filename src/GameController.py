@@ -25,32 +25,45 @@ class GameController:
         werewolves_number = 3 if len(p_ids) >= 16 else 2
 
         sage_id = random.choice(p_ids)
-        self.game.add_player(Sage(sage_id))
+        sage = Sage(sage_id)
+        self.game.add_player(sage)
+        self.game.sage = sage
         p_ids.remove(sage_id)
 
         medic_id = random.choice(p_ids)
-        self.game.add_player(Medic(medic_id))
+        medic = Medic(medic_id)
+        self.game.add_player(medic)
+        self.game.medic = medic
         p_ids.remove(medic_id)
 
         for _ in range(werewolves_number):
             werewolf_id = random.choice(p_ids)
-            self.game.add_player(Werewolf(werewolf_id))
+            werewolf = Werewolf(werewolf_id)
+            self.game.add_player(werewolf)
+            self.game.werewolves.append(werewolf)
             p_ids.remove(werewolf_id)
 
         for player_id in p_ids:
-            self.game.add_player(Villager(player_id))
+            villager = Villager(player_id)
+            self.game.add_player(villager)
+            self.game.villagers.append(player_id)
 
+    # sends DM to each player
     async def inform_about_roles(self):
         for player in self.game.players:
             user = await bot.fetch_user(player.id)
             await user.send(f'Your role is {type(player).__name__}')
 
     async def start_game(self):
+        self.game.alive_players = self.game.players.copy()
+
         await self.inform_about_roles()
-        print("Game started. Let the hunt begin!")
+
         while not self.game.check_game_over():
             self.game.start_night()
-            # Handle night actions here (example: Werewolf kills)
+            await self.game.sage_checking()
             self.game.start_day()
             # Handle day actions here (example: Villager discussions)
             self.game.tally_votes()
+
+            self.game.update_alive_players()

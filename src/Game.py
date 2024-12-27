@@ -1,16 +1,25 @@
 from src.Players import *
-from Bot import bot
+from Bot import bot, get_sage_choice
+
 
 class Game:
     def __init__(self):
-        self.game_controller = None
         self.players = []
+        self.alive_players = []
         self.phase = "waiting"  # waiting, night, day
         self.votes = {}
-
+        self.sage = None
+        self.medic = None
+        self.werewolves = []
+        self.villagers = []
 
     def add_player(self, player):
         self.players.append(player)
+
+    def update_alive_players(self):
+        for player in self.players:
+            if player.state == PlayerState.DEAD:
+                self.alive_players.remove(player)
 
     def start_night(self):
         self.phase = "night"
@@ -40,6 +49,15 @@ class Game:
 
     def check_game_over(self):
         pass
+
+    async def sage_checking(self):
+        if self.sage.state == PlayerState.ALIVE:
+            sage_choice = await get_sage_choice(self.sage.id)
+            user = await bot.fetch_user(sage_choice.id)
+            if isinstance(sage_choice, Werewolf):
+                await user.send("Player you've chosen IS a werewolf!")
+            else:
+                await user.send("Player you've chose IS NOT a werewolf!")
 
 
 class SpecificGameType(Game):
