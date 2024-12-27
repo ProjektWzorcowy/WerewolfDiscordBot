@@ -1,14 +1,14 @@
 from src.Game import Game
 from src.Players import *
 import random
-
+from Bot import bot
 
 class GameController:
     def __init__(self):
+        self.game = Game()
         self.is_Started = False
         self.owner_id = None
         self.players_ids = []
-        self.game = Game()
 
     def set_started_status(self):
         self.is_Started = True
@@ -20,25 +20,33 @@ class GameController:
         self.players_ids.append(player_id)
 
     def set_roles(self):
-        werewolves_number = 3 if len(self.players_ids) >= 16 else 2
+        p_ids = self.players_ids.copy()
 
-        sage_id = random.choice(self.players_ids)
+        werewolves_number = 3 if len(p_ids) >= 16 else 2
+
+        sage_id = random.choice(p_ids)
         self.game.add_player(Sage(sage_id))
-        self.players_ids.remove(sage_id)
+        p_ids.remove(sage_id)
 
-        medic_id = random.choice(self.players_ids)
+        medic_id = random.choice(p_ids)
         self.game.add_player(Medic(medic_id))
-        self.players_ids.remove(medic_id)
+        p_ids.remove(medic_id)
 
         for _ in range(werewolves_number):
-            werewolf_id = random.choice(self.players_ids)
+            werewolf_id = random.choice(p_ids)
             self.game.add_player(Werewolf(werewolf_id))
-            self.players_ids.remove(werewolf_id)
+            p_ids.remove(werewolf_id)
 
-        for player_id in self.players_ids:
+        for player_id in p_ids:
             self.game.add_player(Villager(player_id))
 
-    def start_game(self):
+    async def inform_about_roles(self):
+        for player in self.game.players:
+            user = await bot.fetch_user(player.id)
+            await user.send(f'Your role is {type(player).__name__}')
+
+    async def start_game(self):
+        await self.inform_about_roles()
         print("Game started. Let the hunt begin!")
         while not self.game.check_game_over():
             self.game.start_night()

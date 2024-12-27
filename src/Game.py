@@ -1,11 +1,13 @@
 from src.Players import *
-
+from Bot import bot
 
 class Game:
     def __init__(self):
+        self.game_controller = None
         self.players = []
         self.phase = "waiting"  # waiting, night, day
         self.votes = {}
+
 
     def add_player(self, player):
         self.players.append(player)
@@ -37,7 +39,6 @@ class Game:
         self.votes.clear()
 
     def check_game_over(self):
-        #implemented by 
         pass
 
 

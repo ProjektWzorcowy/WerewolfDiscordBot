@@ -1,10 +1,3 @@
-import bot
+import Bot
 
-bot.run_bot()
-
-
-
-
-
-
-
+Bot.run_bot()
