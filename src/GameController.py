@@ -3,6 +3,7 @@ from src.Players import *
 import random
 from Bot import bot
 
+
 class GameController:
     def __init__(self):
         self.game = Game()
@@ -29,7 +30,7 @@ class GameController:
         self.game.add_player(sage)
         self.game.sage = sage
         p_ids.remove(sage_id)
-
+        
         medic_id = random.choice(p_ids)
         medic = Medic(medic_id)
         self.game.add_player(medic)
@@ -62,8 +63,9 @@ class GameController:
         while not self.game.check_game_over():
             self.game.start_night()
             await self.game.sage_checking()
+            await self.game.medic_action()
+            await self.game.werewolf_killing()
+            self.game.medic_target = None
             self.game.start_day()
-            # Handle day actions here (example: Villager discussions)
-            self.game.tally_votes()
-
+            await self.game.voting()
             self.game.update_alive_players()

@@ -57,8 +57,8 @@ async def get_players_names_dict(players):
     return players_names_dict
 
 
-async def get_sage_choice(sage_id):
-    return await send_select_player_menu(sage_id)
+async def get_choice(player_id):
+    return await send_select_player_menu(player_id)
 
 
 # import has to be here to avoid circular import
@@ -81,6 +81,7 @@ async def on_message(ctx):
 async def start(ctx):
     if not game_controller.is_Started:
         await ctx.send("Game preparation started, waiting for players to join...")
+        game.game_channel = ctx.channel
         game_controller.set_owner_id(ctx.author.id)
         game_controller.set_started_status()
         await join(ctx)

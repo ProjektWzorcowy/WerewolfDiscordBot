@@ -1,5 +1,5 @@
 from src.Players import *
-from Bot import bot, get_sage_choice
+from Bot import bot, get_choice
 
 
 class Game:
@@ -12,6 +12,8 @@ class Game:
         self.medic = None
         self.werewolves = []
         self.villagers = []
+        self.medic_target = None
+        self.game_channel = None
 
     def add_player(self, player):
         self.players.append(player)
@@ -33,7 +35,7 @@ class Game:
         if voter.state == PlayerState.ALIVE and target.state == PlayerState.ALIVE:
             self.votes[voter.id] = target.id
 
-    def tally_votes(self):
+    async def tally_votes(self):
         tally = {}
         for vote in self.votes.values():
             tally[vote] = tally.get(vote, 0) + 1
@@ -41,9 +43,10 @@ class Game:
         # Find the player with the most votes
         most_voted = max(tally, key=tally.get)
         for player in self.players:
-            if player.id == most_voted:
+            if player.id == most_voted and player.id != self.medic_target:
                 player.die()
-                print(f"{player.id} was executed by the village.")
+                user = bot.fetch_user(player.id)
+                await self.game_channel.send(f'{user.name} got executed!')
 
         self.votes.clear()
 
@@ -52,13 +55,29 @@ class Game:
 
     async def sage_checking(self):
         if self.sage.state == PlayerState.ALIVE:
-            sage_choice = await get_sage_choice(self.sage.id)
+            sage_choice = await get_choice(self.sage.id)
             user = await bot.fetch_user(sage_choice.id)
             if isinstance(sage_choice, Werewolf):
                 await user.send("Player you've chosen IS a werewolf!")
             else:
                 await user.send("Player you've chose IS NOT a werewolf!")
 
+    async def werewolf_killing(self):
+        for werewolf in self.werewolves:
+            if werewolf.state == PlayerState.ALIVE:
+                targeted_player = await get_choice(werewolf.id)
+                self.vote(werewolf, targeted_player)
+        await self.tally_votes()
+
+    async def medic_action(self):
+        if self.medic.state == PlayerState.ALIVE:
+            self.medic_target = await get_choice(self.medic.id)
+
+    async def voting(self):
+        for player in self.alive_players:
+            targeted_player = await get_choice(player.id)
+            self.vote(player, targeted_player)
+        await self.tally_votes()
 
 class SpecificGameType(Game):
     def check_game_over(self):

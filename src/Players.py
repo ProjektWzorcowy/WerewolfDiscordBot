@@ -32,11 +32,31 @@ class Villager(Player):
         # Villagers typically do not perform special actions at night
         return "Villager is asleep."
 
+    def to_dict(self):
+        base_data = super().to_dict()
+        base_data["role"] = "Villager"
+        return base_data
+
+    @classmethod
+    def from_dict(cls, data):
+        player_data = Player.from_dict(data)
+        return cls(id=player_data.id, state=player_data.state)
+
 class Werewolf(Player):
     def action(self, target):
         # Werewolf kills a target
         # Note, some kind of voting will be needed, or one Werewolf is 'Master', only him getting to attack.
         return f"Werewolf {self.id} has attacked {target.id}."
+
+    def to_dict(self):
+        base_data = super().to_dict()
+        base_data["role"] = "Werewolf"
+        return base_data
+
+    @classmethod
+    def from_dict(cls, data):
+        player_data = Player.from_dict(data)
+        return cls(id=player_data.id, state=player_data.state)
 
 class Sage(Player):
     def action(self, target):
@@ -60,3 +80,13 @@ class Sage(Player):
 class Medic(Player):
     def action(self, targert):
         return "..."
+
+    def to_dict(self):
+        base_data = super().to_dict()
+        base_data["role"] = "Medic"
+        return base_data
+
+    @classmethod
+    def from_dict(cls, data):
+        player_data = Player.from_dict(data)
+        return cls(id=player_data.id, state=player_data.state)
