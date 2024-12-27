@@ -1,6 +1,7 @@
 from token_1 import tokenik
 import discord
 from discord.ext import commands
+import asyncio
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), case_insensitive=True, self_bot=True)
 
@@ -66,7 +67,7 @@ async def get_player_mentions():
     return player_names
 
 
-async def interact_with_sage(ctx):
+async def interact_with_sage(sage_id):
     pass
 
 
@@ -81,26 +82,39 @@ async def get_player_names():
 
 
 class PlayersDropdown(discord.ui.Select):
-    def __init__(self, lst):
+    def __init__(self, lst, future):
         options = [
             discord.SelectOption(label=player) for player in lst
         ]
-
         super().__init__(placeholder="Choose a player", max_values=1, min_values=1, options=options)
+        self.lst = lst
+        self.future = future
 
     async def callback(self, interaction: discord.Interaction):
-        pass
+        selected_player = self.values[0]
+        selected_player_ind = self.lst.index(selected_player)
+        self.future.set_result(selected_player_ind)
+        # there is no problem with send_message method availability, although it can show it in PyCharm
+        await interaction.response.send_message(f'You chose {selected_player}!')
 
 
 class PlayersDropdownView(discord.ui.View):
-    def __init__(self, lst):
+    def __init__(self, lst, future):
         super().__init__()
-        self.add_item(PlayersDropdown(lst))
+        self.add_item(PlayersDropdown(lst, future))
 
 
-async def select_player_menu(user_id):
+async def send_select_player_menu(user_id):
     player_names = await get_player_names()
-    view = PlayersDropdownView(player_names)
+    future = asyncio.get_event_loop().create_future()
+
+    view = PlayersDropdownView(player_names, future)
     user = await bot.fetch_user(user_id)
+
     await user.send("Choose a player:", view=view)
+
+    selected_player_ind = await future
+
+    return selected_player_ind
+
 
