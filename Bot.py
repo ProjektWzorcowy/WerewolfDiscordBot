@@ -84,6 +84,7 @@ async def start(ctx):
         game.game_channel = ctx.channel
         game_controller.set_owner_id(ctx.author.id)
         game_controller.set_started_status()
+        game_controller.set_message_sender(bot, ctx)
         await join(ctx)
     else:
         user = await bot.fetch_user(game_controller.owner_id)

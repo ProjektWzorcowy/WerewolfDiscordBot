@@ -1,5 +1,6 @@
 from src.Game import Game
 from src.Players import *
+from src.MessageSender import MessageSender
 import random
 from Bot import bot
 
@@ -10,6 +11,10 @@ class GameController:
         self.is_Started = False
         self.owner_id = None
         self.players_ids = []
+        self.messege_sender = None
+    
+    def set_message_sender(self, bot, gamechannelid):
+        self.messege_sender = MessageSender(bot, gamechannelid)
 
     def set_started_status(self):
         self.is_Started = True
@@ -52,8 +57,8 @@ class GameController:
     # sends DM to each player
     async def inform_about_roles(self):
         for player in self.game.players:
-            user = await bot.fetch_user(player.id)
-            await user.send(f'Your role is {type(player).__name__}')
+            self.messege_sender.send_to_person(player.id)
+            
 
     async def start_game(self):
         self.game.alive_players = self.game.players.copy()
