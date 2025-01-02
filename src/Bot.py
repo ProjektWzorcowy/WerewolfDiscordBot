@@ -65,7 +65,7 @@ from src.GameController import GameController
 from src.Players import Player
 
 game_controller = GameController()
-game = SpecificGameType()
+game = SpecificGameType(game_controller)
 game_controller.game = game
 
 

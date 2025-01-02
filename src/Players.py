@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from src.Bot import get_choice
+from src.MessageSender import MessageSender
 
 class PlayerState(Enum):
     ALIVE = auto()
@@ -10,10 +11,9 @@ class ProtectionState(Enum):
     UNPROTECTED = auto()
 
 class Player:
-    def __init__(self, id,  game,  state=PlayerState.ALIVE, protection_state = ProtectionState.UNPROTECTED):
+    def __init__(self, id,  state=PlayerState.ALIVE, protection_state = ProtectionState.UNPROTECTED):
         self.id = id
         self.state = state
-        self.game = game
         self.protection_state = protection_state
 
     def die(self):
@@ -70,9 +70,9 @@ class Sage(Player):
         if self.state == PlayerState.ALIVE:
             sage_choice = await get_choice(self.id)
             if isinstance(sage_choice, Werewolf):
-                self.game.controller.messege_sender.send_to_person(self.id, "Player you've chosen IS a werewolf!")
+                MessageSender.send_to_person(self.id, "Player you've chosen IS a werewolf!")
             else:
-                self.game.controller.messege_sender.send_to_person(self.id, "Player you've chosen IS NOT a werewolf!")
+                MessageSender.send_to_person(self.id, "Player you've chosen IS NOT a werewolf!")
             
 
     def to_dict(self):
