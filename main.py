@@ -1,3 +1,3 @@
-import Bot
+import src.Bot
 
-Bot.run_bot()
+src.Bot.run_bot()

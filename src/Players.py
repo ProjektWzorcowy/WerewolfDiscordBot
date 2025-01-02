@@ -1,18 +1,25 @@
 from enum import Enum, auto
+from src.Bot import get_choice
 
 class PlayerState(Enum):
     ALIVE = auto()
     DEAD = auto()
 
+class ProtectionState(Enum):
+    PROTECTED = auto()
+    UNPROTECTED = auto()
+
 class Player:
-    def __init__(self, id, state=PlayerState.ALIVE):
+    def __init__(self, id,  game,  state=PlayerState.ALIVE, protection_state = ProtectionState.UNPROTECTED):
         self.id = id
         self.state = state
+        self.game = game
+        self.protection_state = protection_state
 
     def die(self):
         self.state = PlayerState.DEAD
 
-    def action(self):
+    async def action(self):
         pass  # To be implemented by subclasses
 
     def to_dict(self):
@@ -28,7 +35,7 @@ class Player:
 
 
 class Villager(Player):
-    def action(self):
+    async def action(self):
         # Villagers typically do not perform special actions at night
         return "Villager is asleep."
 
@@ -43,7 +50,7 @@ class Villager(Player):
         return cls(id=player_data.id, state=player_data.state)
 
 class Werewolf(Player):
-    def action(self, target):
+    async def action(self, target):
         # Werewolf kills a target
         # Note, some kind of voting will be needed, or one Werewolf is 'Master', only him getting to attack.
         return f"Werewolf {self.id} has attacked {target.id}."
@@ -59,12 +66,14 @@ class Werewolf(Player):
         return cls(id=player_data.id, state=player_data.state)
 
 class Sage(Player):
-    def action(self, target):
-        # Sage can identify whether a player is a Werewolf
-        if isinstance(target, Werewolf):
-            return f"Sage {self.id} sees that {target.id} is a Werewolf."
-        else:
-            return f"Sage {self.id} sees that {target.id} is not a Werewolf."
+    async def action(self):
+        if self.state == PlayerState.ALIVE:
+            sage_choice = await get_choice(self.id)
+            if isinstance(sage_choice, Werewolf):
+                self.game.controller.messege_sender.send_to_person(self.id, "Player you've chosen IS a werewolf!")
+            else:
+                self.game.controller.messege_sender.send_to_person(self.id, "Player you've chosen IS NOT a werewolf!")
+            
 
     def to_dict(self):
         base_data = super().to_dict()
@@ -78,8 +87,11 @@ class Sage(Player):
 
 
 class Medic(Player):
-    def action(self, targert):
-        return "..."
+    async def action(self):
+        if self.state == PlayerState.ALIVE:
+            medic_choice = await get_choice(self.id)
+            medic_choice.protection_state = ProtectionState.PROTECTED
+            self.game.controller.messege_sender.send_to_person(self.id, "Player you've chosen will be protected!")
 
     def to_dict(self):
         base_data = super().to_dict()

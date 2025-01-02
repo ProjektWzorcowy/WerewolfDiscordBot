@@ -4,8 +4,6 @@ from discord.ext import commands
 import asyncio
 import json
 
-from src.Players import Player
-
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), case_insensitive=True, self_bot=True)
 
 
@@ -64,6 +62,7 @@ async def get_choice(player_id):
 # import has to be here to avoid circular import
 from src.Game import SpecificGameType
 from src.GameController import GameController
+from src.Players import Player
 
 game_controller = GameController()
 game = SpecificGameType()

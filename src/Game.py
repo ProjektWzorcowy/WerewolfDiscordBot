@@ -1,19 +1,23 @@
 from src.Players import *
-from Bot import bot, get_choice
+from src.MessageSender import MessageSender
+from src.Bot import bot
+import asyncio
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, controller):
         self.players = []
         self.alive_players = []
         self.phase = "waiting"  # waiting, night, day
         self.votes = {}
+        self.werewolves_votes = {}
         self.sage = None
         self.medic = None
         self.werewolves = []
         self.villagers = []
         self.medic_target = None
         self.game_channel = None
+        self.controller = controller
 
     def add_player(self, player):
         self.players.append(player)
@@ -23,13 +27,14 @@ class Game:
             if player.state == PlayerState.DEAD:
                 self.alive_players.remove(player)
 
-    def start_night(self):
-        self.phase = "night"
-        print("Night begins. Players take their actions.")
+    async def start_night(self):
+        pass
+        #night depends on implementation
 
-    def start_day(self):
+    async def start_day(self):
         self.phase = "day"
         print("Day begins. Players discuss and vote.")
+        await self.voting()
         
     def vote(self, voter, target):
         if voter.state == PlayerState.ALIVE and target.state == PlayerState.ALIVE:
@@ -43,24 +48,15 @@ class Game:
         # Find the player with the most votes
         most_voted = max(tally, key=tally.get)
         for player in self.players:
-            if player.id == most_voted and player.id != self.medic_target:
+            if player.id == most_voted:
                 player.die()
                 user = bot.fetch_user(player.id)
-                await self.game_channel.send(f'{user.name} got executed!')
+                await self.controller.messege_sender.send_to_gamechannel(f'{user.name} got executed!')
 
         self.votes.clear()
 
     def check_game_over(self):
         pass
-
-    async def sage_checking(self):
-        if self.sage.state == PlayerState.ALIVE:
-            sage_choice = await get_choice(self.sage.id)
-            user = await bot.fetch_user(sage_choice.id)
-            if isinstance(sage_choice, Werewolf):
-                await user.send("Player you've chosen IS a werewolf!")
-            else:
-                await user.send("Player you've chose IS NOT a werewolf!")
 
     async def werewolf_killing(self):
         for werewolf in self.werewolves:
@@ -69,15 +65,15 @@ class Game:
                 self.vote(werewolf, targeted_player)
         await self.tally_votes()
 
-    async def medic_action(self):
-        if self.medic.state == PlayerState.ALIVE:
-            self.medic_target = await get_choice(self.medic.id)
+async def voting(self):
+    async def handle_vote(player):
+        targeted_player = await get_choice(player.id)
+        self.vote(player, targeted_player)
+    # Rather than voting one by one, we handle them all at the same time:
+    voting_tasks = [handle_vote(player) for player in self.alive_players]
+    await asyncio.gather(*voting_tasks)
 
-    async def voting(self):
-        for player in self.alive_players:
-            targeted_player = await get_choice(player.id)
-            self.vote(player, targeted_player)
-        await self.tally_votes()
+    await self.tally_votes()
 
 class SpecificGameType(Game):
     def check_game_over(self):
@@ -90,5 +86,42 @@ class SpecificGameType(Game):
         if len(werewolves) >= len(villagers):
             print("Werewolves win!")
             return True
-            
+        
         return False
+    
+    async def tally_werewolf_votes(self):
+        tally = {}
+        for vote in self.werewolves_votes.values():
+            tally[vote] = tally.get(vote, 0) + 1
+        
+        # Find the player with the most votes
+        most_voted = max(tally, key=tally.get)
+        for player in self.players:
+            if player.id == most_voted:
+                return player
+            
+    async def werewolf_vote(self, voter, target):
+        if voter.state == PlayerState.ALIVE and target.state == PlayerState.ALIVE:
+            self.werewolves_votes[voter.id] = target.id
+    
+    async def werewolf_voting(self):
+        async def handle_vote(player):
+            targeted_player = await get_choice(player.id)
+            self.werewolf_vote(player, targeted_player)
+        # Rather than voting one by one, we handle them all at the same time:
+        voting_tasks = [asyncio.create_task(handle_vote(werewolf)) for werewolf in self.werewolves if werewolf.state == PlayerState.ALIVE]
+        await asyncio.gather(*voting_tasks)
+
+        return await self.tally_werewolf_votes()
+
+
+    async def start_night(self):
+        self.phase = "night"
+        print("Night begins. Players take their actions.")
+        villagers_action_tasks = [asyncio.create_task(v.action()) for v in self.villagers]
+        werewolf_victim = await self.werewolf_voting()
+        # We wait for all villager tasks.
+        await asyncio.gather(*villagers_action_tasks)
+        #We kill the attacke player, as long as they were not protected
+        if(werewolf_victim.ProtectionState == ProtectionState.UNPROTECTED):
+            werewolf_victim.die()
