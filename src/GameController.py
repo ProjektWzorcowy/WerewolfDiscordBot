@@ -26,6 +26,9 @@ class GameController:
 
     def set_roles(self):
         p_ids = self.players_ids.copy()
+        
+        if(len(p_ids) < 6):
+            raise ValueError("The number of players was too low to start the game.")
 
         werewolves_number = 3 if len(p_ids) >= 16 else 2
 
