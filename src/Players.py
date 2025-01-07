@@ -14,10 +14,18 @@ class Player:
     def __init__(self, id,  state=PlayerState.ALIVE, protection_state = ProtectionState.UNPROTECTED):
         self.id = id
         self.state = state
+        self.role = "deafult"
         self.protection_state = protection_state
 
     def die(self):
         self.state = PlayerState.DEAD
+
+    def test(self):
+        print(self.role)
+        print(self.state)
+        print(self.protection_state)
+        print("-------------")
+        return True
 
     async def action(self):
         pass  # To be implemented by subclasses
@@ -35,6 +43,7 @@ class Player:
 
 
 class Villager(Player):
+    role = "Villager"
     async def action(self):
         # Villagers typically do not perform special actions at night
         return "Villager is asleep."
@@ -50,6 +59,7 @@ class Villager(Player):
         return cls(id=player_data.id, state=player_data.state)
 
 class Werewolf(Player):
+    role = "Werewolf"
     async def action(self, target):
         # Werewolf kills a target
         # Note, some kind of voting will be needed, or one Werewolf is 'Master', only him getting to attack.
@@ -66,6 +76,7 @@ class Werewolf(Player):
         return cls(id=player_data.id, state=player_data.state)
 
 class Sage(Player):
+    role = "Sage"
     async def action(self):
         if self.state == PlayerState.ALIVE:
             sage_choice = await get_choice(self.id)
@@ -87,6 +98,7 @@ class Sage(Player):
 
 
 class Medic(Player):
+    role = "Medic"
     async def action(self):
         if self.state == PlayerState.ALIVE:
             medic_choice = await get_choice(self.id)

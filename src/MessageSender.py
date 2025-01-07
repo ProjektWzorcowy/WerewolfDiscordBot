@@ -40,8 +40,11 @@ class MessageSender:
         :param user_id: The ID of the user to send the message to
         :param message: The message to send
         """
-        user = await self.bot.fetch_user(user_id)
-        if user:
-            await user.send(message)
-        else:
-            raise ValueError(f"User with ID {user_id} not found.")
+        try: 
+            user = await self.bot.fetch_user(user_id)
+            if user:
+                await user.send(message)
+            else:
+                raise ValueError(f"User with ID {user_id} not found.")
+        except:
+            pass

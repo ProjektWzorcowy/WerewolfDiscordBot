@@ -3,8 +3,18 @@ import discord
 from discord.ext import commands
 import asyncio
 import json
+#FOR TESTING ONLY!
+class UnfilteredBot(commands.Bot):
+    """An overridden version of the Bot class that will listen to other bots."""
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), case_insensitive=True, self_bot=True)
+    async def process_commands(self, message):
+        """Override process_commands to listen to bots."""
+        ctx = await self.get_context(message)
+        if ctx.valid:  # Only invoke if a valid command is found
+            await self.invoke(ctx)
+
+bot = UnfilteredBot(command_prefix='!', intents=discord.Intents.all(), case_insensitive=True, self_bot=True)
+#bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), case_insensitive=True, self_bot=True)
 
 
 def run_bot():

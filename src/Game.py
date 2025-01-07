@@ -78,8 +78,12 @@ async def voting(self):
 class SpecificGameType(Game):
     def check_game_over(self):
         werewolves = [p for p in self.players if isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
-        villagers = [p for p in self.players if not isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
-        
+        villagers = [p for p in self.players if not isinstance(p, Werewolf)  and p.state == PlayerState.ALIVE]
+        for p in self.players:
+            print(p.role)
+            print(str(p.state))
+            print("-----------")
+
         if not werewolves:
             print("Villagers win!")
             return True
@@ -125,3 +129,6 @@ class SpecificGameType(Game):
         #We kill the attacke player, as long as they were not protected
         if(werewolf_victim.ProtectionState == ProtectionState.UNPROTECTED):
             werewolf_victim.die()
+        #Reset the protection state
+        for player in self.players:
+            player.ProtectionState = ProtectionState.UNPROTECTED

@@ -26,40 +26,58 @@ class GameController:
 
     def set_roles(self):
         p_ids = self.players_ids.copy()
-        
-        if(len(p_ids) < 6):
-            raise ValueError("The number of players was too low to start the game.")
 
-        werewolves_number = 3 if len(p_ids) >= 16 else 2
+        if len(p_ids) < 5:
+            raise ValueError("The number of players is too low to start the game.")
 
+        # Determine the number of werewolves dynamically
+        if len(p_ids) >= 12:
+            werewolves_number = 3
+        elif len(p_ids) >= 7:
+            werewolves_number = 2
+        else:
+            werewolves_number = 1
+
+        # Assign essential roles
+        roles_assigned = []
+
+        # Assign the Sage (essential role)
         sage_id = random.choice(p_ids)
         sage = Sage(sage_id, self.game)
         self.game.add_player(sage)
         self.game.sage = sage
+        roles_assigned.append(sage_id)
         p_ids.remove(sage_id)
-        
-        medic_id = random.choice(p_ids)
-        medic = Medic(medic_id, self.game)
-        self.game.add_player(medic)
-        self.game.medic = medic
-        p_ids.remove(medic_id)
 
+        # Assign the Medic (essential role)
+        if len(p_ids) >= 6:  # Add Medic only if there are enough players
+            medic_id = random.choice(p_ids)
+            medic = Medic(medic_id, self.game)
+            self.game.add_player(medic)
+            self.game.medic = medic
+            roles_assigned.append(medic_id)
+            p_ids.remove(medic_id)
+
+        # Assign Werewolves
         for _ in range(werewolves_number):
             werewolf_id = random.choice(p_ids)
             werewolf = Werewolf(werewolf_id, self.game)
             self.game.add_player(werewolf)
             self.game.werewolves.append(werewolf)
+            roles_assigned.append(werewolf_id)
             p_ids.remove(werewolf_id)
 
+        # Assign remaining players as Villagers
         for player_id in p_ids:
             villager = Villager(player_id, self.game)
             self.game.add_player(villager)
             self.game.villagers.append(player_id)
 
+
     # sends DM to each player
     async def inform_about_roles(self):
         for player in self.game.players:
-            self.messege_sender.send_to_person(player.id)
+            await self.messege_sender.send_to_person(player.id, player.role)
             
 
     async def start_game(self):
