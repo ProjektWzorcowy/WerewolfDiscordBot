@@ -21,6 +21,9 @@ class Game:
 
     def add_player(self, player):
         self.players.append(player)
+    
+    def split_into_teams():
+        pass
 
     def update_alive_players(self):
         for player in self.players:
@@ -81,8 +84,15 @@ class SpecificGameType(Game):
         villagers = [p for p in self.players if not isinstance(p, Werewolf)  and p.state == PlayerState.ALIVE]
         for p in self.players:
             print(p.role)
-            print(str(p.state))
+            print(type(p.state))
+            if isinstance(p.state, PlayerState):  # Check if state is an instance of PlayerState
+                print(p.state.name)
+            elif p.state is None:
+                print("NONE!!")
+            else:
+                print("Invalid state!")
             print("-----------")
+
 
         if not werewolves:
             print("Villagers win!")
@@ -92,6 +102,10 @@ class SpecificGameType(Game):
             return True
         
         return False
+    
+    def split_into_teams(self):
+        self.werewolves = [p for p in self.players if isinstance(p, Werewolf)]
+        self.villagers = [p for p in self.players if not isinstance(p, Werewolf)]
     
     async def tally_werewolf_votes(self):
         tally = {}

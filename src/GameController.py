@@ -27,7 +27,7 @@ class GameController:
     def set_roles(self):
         p_ids = self.players_ids.copy()
 
-        if len(p_ids) < 5:
+        if len(p_ids) < 3:
             raise ValueError("The number of players is too low to start the game.")
 
         # Determine the number of werewolves dynamically
@@ -43,7 +43,7 @@ class GameController:
 
         # Assign the Sage (essential role)
         sage_id = random.choice(p_ids)
-        sage = Sage(sage_id, self.game)
+        sage = Sage(sage_id)
         self.game.add_player(sage)
         self.game.sage = sage
         roles_assigned.append(sage_id)
@@ -52,7 +52,7 @@ class GameController:
         # Assign the Medic (essential role)
         if len(p_ids) >= 6:  # Add Medic only if there are enough players
             medic_id = random.choice(p_ids)
-            medic = Medic(medic_id, self.game)
+            medic = Medic(medic_id)
             self.game.add_player(medic)
             self.game.medic = medic
             roles_assigned.append(medic_id)
@@ -61,7 +61,7 @@ class GameController:
         # Assign Werewolves
         for _ in range(werewolves_number):
             werewolf_id = random.choice(p_ids)
-            werewolf = Werewolf(werewolf_id, self.game)
+            werewolf = Werewolf(werewolf_id)
             self.game.add_player(werewolf)
             self.game.werewolves.append(werewolf)
             roles_assigned.append(werewolf_id)
@@ -69,7 +69,7 @@ class GameController:
 
         # Assign remaining players as Villagers
         for player_id in p_ids:
-            villager = Villager(player_id, self.game)
+            villager = Villager(player_id)
             self.game.add_player(villager)
             self.game.villagers.append(player_id)
 
@@ -82,7 +82,7 @@ class GameController:
 
     async def start_game(self):
         self.game.alive_players = self.game.players.copy()
-
+        self.game.split_into_teams()
         await self.inform_about_roles()
 
         while not self.game.check_game_over():

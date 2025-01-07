@@ -44,6 +44,11 @@ class Player:
 
 class Villager(Player):
     role = "Villager"
+    
+    def __init__(self, id):
+        super().__init__(id)
+        self.role = self.__class__.role  # Explicitly set the role
+
     async def action(self):
         # Villagers typically do not perform special actions at night
         return "Villager is asleep."
@@ -60,6 +65,11 @@ class Villager(Player):
 
 class Werewolf(Player):
     role = "Werewolf"
+    
+    def __init__(self, id):
+        super().__init__(id)
+        self.role = self.__class__.role  # Explicitly set the role
+
     async def action(self, target):
         # Werewolf kills a target
         # Note, some kind of voting will be needed, or one Werewolf is 'Master', only him getting to attack.
@@ -77,6 +87,11 @@ class Werewolf(Player):
 
 class Sage(Player):
     role = "Sage"
+    
+    def __init__(self, id):
+        super().__init__(id)
+        self.role = self.__class__.role  # Explicitly set the role
+
     async def action(self):
         if self.state == PlayerState.ALIVE:
             sage_choice = await get_choice(self.id)
@@ -99,6 +114,11 @@ class Sage(Player):
 
 class Medic(Player):
     role = "Medic"
+    
+    def __init__(self, id):
+        super().__init__(id)
+        self.role = self.__class__.role  # Explicitly set the role
+
     async def action(self):
         if self.state == PlayerState.ALIVE:
             medic_choice = await get_choice(self.id)
