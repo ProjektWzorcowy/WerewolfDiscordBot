@@ -24,54 +24,29 @@ class GameController:
     def add_player_id(self, player_id):
         self.players_ids.append(player_id)
 
-    def set_roles(self):
+    async def set_roles(self):
         p_ids = self.players_ids.copy()
 
         if len(p_ids) < 3:
+            MessageSender.send_to_gamechannel("The number of players is too low! Cannot start a game")
             raise ValueError("The number of players is too low to start the game.")
 
-        # Determine the number of werewolves dynamically
-        if len(p_ids) >= 12:
-            werewolves_number = 3
-        elif len(p_ids) >= 7:
-            werewolves_number = 2
-        else:
-            werewolves_number = 1
+        role_number = 1  # Starting role number
 
-        # Assign essential roles
-        roles_assigned = []
+        # Assign roles dynamically using the factory
+        while p_ids:
+            # Get the next role factory for the current role_number
+            factory_class = await self.game.get_next_role_factory(role_number)
+            
+            player_id = random.choice(p_ids)
+            factory = factory_class()
+            player = factory.create_player(player_id, self.game)
+            
+            self.game.add_player(player)
+            
+            p_ids.remove(player_id)
+            role_number += 1
 
-        # Assign the Sage (essential role)
-        sage_id = random.choice(p_ids)
-        sage = Sage(sage_id)
-        self.game.add_player(sage)
-        self.game.sage = sage
-        roles_assigned.append(sage_id)
-        p_ids.remove(sage_id)
-
-        # Assign the Medic (essential role)
-        if len(p_ids) >= 6:  # Add Medic only if there are enough players
-            medic_id = random.choice(p_ids)
-            medic = Medic(medic_id)
-            self.game.add_player(medic)
-            self.game.medic = medic
-            roles_assigned.append(medic_id)
-            p_ids.remove(medic_id)
-
-        # Assign Werewolves
-        for _ in range(werewolves_number):
-            werewolf_id = random.choice(p_ids)
-            werewolf = Werewolf(werewolf_id)
-            self.game.add_player(werewolf)
-            self.game.werewolves.append(werewolf)
-            roles_assigned.append(werewolf_id)
-            p_ids.remove(werewolf_id)
-
-        # Assign remaining players as Villagers
-        for player_id in p_ids:
-            villager = Villager(player_id)
-            self.game.add_player(villager)
-            self.game.villagers.append(player_id)
 
 
     # sends DM to each player
@@ -91,3 +66,5 @@ class GameController:
             await self.game.start_day()
             # TODO: Same
             self.game.update_alive_players()
+
+        self.messege_sender.send_to_gamechannel("Game ends! The winning team is: " + self.game.winning_team + "!")

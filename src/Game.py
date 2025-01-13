@@ -1,5 +1,5 @@
 from src.Players import *
-from src.MessageSender import MessageSender
+from src.PlayerFactory import *
 from src.Bot import bot
 import asyncio
 
@@ -18,6 +18,7 @@ class Game:
         self.medic_target = None
         self.game_channel = None
         self.controller = controller
+        self.winning_team = "NONE"
 
     def add_player(self, player):
         self.players.append(player)
@@ -78,27 +79,21 @@ async def voting(self):
 
     await self.tally_votes()
 
+async def get_next_role(self, role_number):
+    pass
+
 class SpecificGameType(Game):
     def check_game_over(self):
         werewolves = [p for p in self.players if isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
         villagers = [p for p in self.players if not isinstance(p, Werewolf)  and p.state == PlayerState.ALIVE]
-        for p in self.players:
-            print(p.role)
-            print(type(p.state))
-            if isinstance(p.state, PlayerState):  # Check if state is an instance of PlayerState
-                print(p.state.name)
-            elif p.state is None:
-                print("NONE!!")
-            else:
-                print("Invalid state!")
-            print("-----------")
-
 
         if not werewolves:
             print("Villagers win!")
+            self.winning_team = "Villagers"
             return True
         if len(werewolves) >= len(villagers):
             print("Werewolves win!")
+            self.winning_team = "Werewolves"
             return True
         
         return False
@@ -146,3 +141,123 @@ class SpecificGameType(Game):
         #Reset the protection state
         for player in self.players:
             player.ProtectionState = ProtectionState.UNPROTECTED
+
+    async def get_next_role_factory(self, role_number):
+        if(role_number == 2 | role_number == 8 | role_number == 13):
+            return WerewolfFactory
+        if(role_number == 3):
+            return SageFactory
+        if(role_number == 4):
+            return MedicFactory
+        return VillagerFactory
+
+class CrazyFox(Game):
+    def check_game_over(self):
+        werewolves = [p for p in self.players if isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
+        villagers = [p for p in self.players if not isinstance(p, Werewolf) and  not isinstance(p, Fox)  and p.state == PlayerState.ALIVE]
+        foxes = [p for p in self.players if isinstance(p, Fox) and p.state == PlayerState.ALIVE]
+        if not werewolves:
+            if not foxes:
+                print("Villagers win!")
+                self.winning_team = "Villagers"
+                return True
+            else:
+                print("Foxes win!")
+                self.winning_team = "Foxes"
+                return True
+            
+        if len(werewolves) >= len(villagers):
+            if not foxes:
+                print("Werewolves win!")
+                self.winning_team = "Werewolves"
+                return True
+            else:
+                print("Foxes win!")
+                self.winning_team = "Foxes"
+                return True
+        
+        return False
+    
+    def split_into_teams(self):
+        self.werewolves = [p for p in self.players if isinstance(p, Werewolf)]
+        self.villagers = [p for p in self.players if not isinstance(p, Werewolf) and not isinstance(p, Fox)]
+        self.foxes = [p for p in self.players if isinstance(p, Fox)]
+    
+    async def tally_werewolf_votes(self):
+        tally = {}
+        for vote in self.werewolves_votes.values():
+            tally[vote] = tally.get(vote, 0) + 1
+        
+        # Find the player with the most votes
+        most_voted = max(tally, key=tally.get)
+        for player in self.players:
+            if player.id == most_voted:
+                return player
+            
+    async def werewolf_vote(self, voter, target):
+        if voter.state == PlayerState.ALIVE and target.state == PlayerState.ALIVE:
+            self.werewolves_votes[voter.id] = target.id
+    
+    async def werewolf_voting(self):
+        async def handle_vote(player):
+            targeted_player = await get_choice(player.id)
+            self.werewolf_vote(player, targeted_player)
+        # Rather than voting one by one, we handle them all at the same time:
+        voting_tasks = [asyncio.create_task(handle_vote(werewolf)) for werewolf in self.werewolves if werewolf.state == PlayerState.ALIVE]
+        await asyncio.gather(*voting_tasks)
+
+        return await self.tally_werewolf_votes()
+
+
+    async def start_night(self):
+        self.phase = "night"
+        print("Night begins. Players take their actions.")
+        villagers_action_tasks = [asyncio.create_task(v.action()) for v in self.villagers]
+        foxes_action_tasks = [asyncio.create_task(v.action()) for v in self.foxes]
+        werewolf_victim = await self.werewolf_voting()
+        # We wait for all villager and foxes tasks.
+        await asyncio.gather(*villagers_action_tasks)
+        await asyncio.gather(*foxes_action_tasks)
+        #We kill the attacke player, as long as they were not protected
+        if(werewolf_victim.ProtectionState == ProtectionState.UNPROTECTED):
+            werewolf_victim.die()
+        #Reset the protection state
+        for player in self.players:
+            player.ProtectionState = ProtectionState.UNPROTECTED
+
+    async def get_next_role_factory(self, role_number):
+        if(role_number == 2):
+            return FoxFactory
+        if(role_number == 3 | role_number == 8 | role_number == 13):
+            return WerewolfFactory
+        if(role_number == 4):
+            return SageFactory
+        if(role_number == 5):
+            return MedicFactory
+        return VillagerFactory
+
+
+class Politics(Game):
+    def check_game_over(self):
+        werewolves = [p for p in self.players if isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
+        villagers = [p for p in self.players if not isinstance(p, Werewolf)  and p.state == PlayerState.ALIVE]
+
+        if not werewolves:
+            print("Villagers win!")
+            self.winning_team = "Villagers"
+            return True
+        if len(werewolves) >= len(villagers):
+            print("Werewolves win!")
+            self.winning_team = "Werewolves"
+            return True
+        
+        return False
+    
+    def split_into_teams(self):
+        self.werewolves = [p for p in self.players if isinstance(p, Werewolf)]
+        self.villagers = [p for p in self.players if not isinstance(p, Werewolf)]
+
+
+    async def start_night(self):
+        self.phase = "night"
+        print("Night begins. Players do not take their actions.")

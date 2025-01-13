@@ -87,36 +87,36 @@ async def on_message(ctx):
 
 
 @bot.command()
-async def start(ctx):
+def start(ctx):
     if not game_controller.is_Started:
-        await ctx.send("Game preparation started, waiting for players to join...")
+        ctx.send("Game preparation started, waiting for players to join...")
         game.game_channel = ctx.channel
         game_controller.set_owner_id(ctx.author.id)
         game_controller.set_started_status()
         game_controller.set_message_sender(bot, ctx)
-        await join(ctx)
+        join(ctx)
     else:
-        user = await bot.fetch_user(game_controller.owner_id)
-        await ctx.send(f'Game was already started! Owner of game is: {user.mention}')
+        user = bot.fetch_user(game_controller.owner_id)
+        ctx.send(f'Game was already started! Owner of game is: {user.mention}')
 
 
 @bot.command()
-async def join(ctx):
+def join(ctx):
     if game.phase == 'waiting':
         if ctx.author.id not in game_controller.players_ids:
-            await ctx.send(f'{ctx.author.mention} has joined!')
+            ctx.send(f'{ctx.author.mention} has joined!')
             game_controller.add_player_id(ctx.author.id)
         else:
-            await ctx.send(f'{ctx.author.mention} You have already joined!')
+            ctx.send(f'{ctx.author.mention} You have already joined!')
 
 
 @bot.command()
-async def begin(ctx):
+def begin(ctx):
     if game.phase == 'waiting' and ctx.author.id is game_controller.owner_id:
-        player_mentions = await get_player_mentions()
-        await ctx.send(f'Game has begun! List of players: {player_mentions}')
+        player_mentions = get_player_mentions()
         game_controller.set_roles()
-        await game_controller.start_game()
+        ctx.send(f'Game has begun! List of players: {player_mentions}')
+        game_controller.start_game()
 
 
 # converts list of ids to list of mentions (@username)
