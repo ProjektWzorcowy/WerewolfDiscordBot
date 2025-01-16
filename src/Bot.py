@@ -44,7 +44,7 @@ class PlayersDropdownView(discord.ui.View):
 
 
 async def send_select_player_menu(user_id):
-    players_names = await get_players_names_dict(game.alive_players)
+    players_names = await get_players_names_dict(game_controller.game.alive_players)
     future = asyncio.get_event_loop().create_future()
 
     view = PlayersDropdownView(players_names, future)
@@ -70,13 +70,10 @@ async def get_choice(player_id):
 
 
 # import has to be here to avoid circular import
-from src.Game import SpecificGameType
 from src.GameController import GameController
 from src.Players import Player
 
 game_controller = GameController()
-game = SpecificGameType(game_controller)
-game_controller.game = game
 
 
 # bot don't react to private messages and messages sent before start of the game
@@ -87,36 +84,48 @@ async def on_message(ctx):
 
 
 @bot.command()
-def start(ctx):
+async def start(ctx):
     if not game_controller.is_Started:
-        ctx.send("Game preparation started, waiting for players to join...")
-        game.game_channel = ctx.channel
+        await ctx.send("Game preparation started, waiting for players to join...")
         game_controller.set_owner_id(ctx.author.id)
         game_controller.set_started_status()
         game_controller.set_message_sender(bot, ctx)
-        join(ctx)
+        await join(ctx)
     else:
         user = bot.fetch_user(game_controller.owner_id)
-        ctx.send(f'Game was already started! Owner of game is: {user.mention}')
+        await ctx.send(f'Game was already started! Owner of game is: {user.mention}')
 
 
 @bot.command()
-def join(ctx):
-    if game.phase == 'waiting':
+async def join(ctx):
+    if game_controller.game.phase == 'waiting':
         if ctx.author.id not in game_controller.players_ids:
-            ctx.send(f'{ctx.author.mention} has joined!')
+            await ctx.send(f'{ctx.author.mention} has joined!')
             game_controller.add_player_id(ctx.author.id)
         else:
-            ctx.send(f'{ctx.author.mention} You have already joined!')
+            await ctx.send(f'{ctx.author.mention} You have already joined!')
 
 
 @bot.command()
-def begin(ctx):
-    if game.phase == 'waiting' and ctx.author.id is game_controller.owner_id:
+async def begin(ctx):
+    if game_controller.game.phase == 'waiting' and ctx.author.id is game_controller.owner_id:
         player_mentions = get_player_mentions()
-        game_controller.set_roles()
-        ctx.send(f'Game has begun! List of players: {player_mentions}')
-        game_controller.start_game()
+        await game_controller.set_roles()
+        await ctx.send(f'Game has begun! List of players: {player_mentions}')
+        await game_controller.start_game()
+
+gametypes = ["lurkingwerewolf", "crazyfox", "politics"]
+
+@bot.command()
+async def choose(ctx, argument: str):
+    if game_controller.game.phase == 'waiting' and ctx.author.id is game_controller.owner_id:
+        if argument in gametypes:
+            await game_controller.switch_gamemode_to(argument)
+            await ctx.send(f"Switchng gamemode to {argument}!")
+        else:
+            types = ', '.join(gametypes)
+            await ctx.send(f"Invalid choice! Please choose a valid gametype. The gametypes are: ")
+            await ctx.send(f"{types}")
 
 
 # converts list of ids to list of mentions (@username)

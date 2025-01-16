@@ -1,4 +1,4 @@
-from src.Game import Game
+from src.Game import *
 from src.MessageSender import MessageSender
 from src.Players import *
 import random
@@ -6,7 +6,7 @@ import random
 
 class GameController:
     def __init__(self):
-        self.game = Game(self)
+        self.game = LurkingWerewolf(self)
         self.is_Started = False
         self.owner_id = None
         self.players_ids = []
@@ -53,7 +53,17 @@ class GameController:
     async def inform_about_roles(self):
         for player in self.game.players:
             await self.messege_sender.send_to_person(player.id, player.role)
-            
+
+    async def switch_gamemode_to(self, mode):
+        match mode:
+            case "lurkingwerewolf":
+                self.game = LurkingWerewolf(self)
+            case "crazyfox":
+                self.game = CrazyFox(self)
+            case "politics":
+                self.game = Politics(self)
+            case _:
+                raise ValueError ("Unknown game type!")
 
     async def start_game(self):
         self.game.alive_players = self.game.players.copy()

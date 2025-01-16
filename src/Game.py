@@ -16,7 +16,6 @@ class Game:
         self.werewolves = []
         self.villagers = []
         self.medic_target = None
-        self.game_channel = None
         self.controller = controller
         self.winning_team = "NONE"
 
@@ -82,7 +81,7 @@ async def voting(self):
 async def get_next_role(self, role_number):
     pass
 
-class SpecificGameType(Game):
+class LurkingWerewolf(Game):
     def check_game_over(self):
         werewolves = [p for p in self.players if isinstance(p, Werewolf) and p.state == PlayerState.ALIVE]
         villagers = [p for p in self.players if not isinstance(p, Werewolf)  and p.state == PlayerState.ALIVE]
@@ -256,6 +255,11 @@ class Politics(Game):
     def split_into_teams(self):
         self.werewolves = [p for p in self.players if isinstance(p, Werewolf)]
         self.villagers = [p for p in self.players if not isinstance(p, Werewolf)]
+
+    async def get_next_role_factory(self, role_number):
+        if(role_number == 2 | role_number == 7  | role_number  == 11):
+            return WerewolfFactory
+        return VillagerFactory
 
 
     async def start_night(self):
