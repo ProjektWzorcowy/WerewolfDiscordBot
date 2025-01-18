@@ -11,12 +11,11 @@ class ProtectionState(Enum):
     UNPROTECTED = auto()
 
 class Player:
-    def __init__(self, game, id,  state=PlayerState.ALIVE, protection_state = ProtectionState.UNPROTECTED):
+    def __init__(self, id,  state=PlayerState.ALIVE, protection_state = ProtectionState.UNPROTECTED):
         self.id = id
         self.state = state
         self.role = "deafult"
         self.protection_state = protection_state
-        self.game = game
 
     def die(self):
         self.state = PlayerState.DEAD
@@ -34,20 +33,33 @@ class Player:
     def to_dict(self):
         return {
             "id": self.id,
+            "role": self.role,
             "state": self.state.name
         }
 
     @classmethod
     def from_dict(cls, data):
         state = PlayerState[data["state"]]
+        match data["role"]:
+            case "Villager":
+                return Villager.from_dict(data)
+            case "Werewolf":
+                return Werewolf.from_dict(data)
+            case "Sage":
+                return Sage.from_dict(data)
+            case "Medic":
+                return Medic.from_dict(data)
+            case "Fox":
+                return Fox.from_dict(data)
+
         return cls(id=data["id"], state=state)
 
 
 class Villager(Player):
     role = "Villager"
     
-    def __init__(self, id, game):
-        super().__init__(id, game)
+    def __init__(self, id, state = PlayerState.ALIVE):
+        super().__init__(id, state)
         self.role = self.__class__.role  # Explicitly set the role
 
     async def action(self):
@@ -61,14 +73,14 @@ class Villager(Player):
 
     @classmethod
     def from_dict(cls, data):
-        player_data = Player.from_dict(data)
-        return cls(id=player_data.id, state=player_data.state)
+        state = PlayerState[data["state"]]
+        return cls(id=data["id"], state=state)
 
 class Werewolf(Player):
     role = "Werewolf"
     
-    def __init__(self, id, game):
-        super().__init__(id, game)
+    def __init__(self, id, state = PlayerState.ALIVE):
+        super().__init__(id, state)
         self.role = self.__class__.role  # Explicitly set the role
 
     async def action(self, target):
@@ -83,23 +95,24 @@ class Werewolf(Player):
 
     @classmethod
     def from_dict(cls, data):
-        player_data = Player.from_dict(data)
-        return cls(id=player_data.id, state=player_data.state)
+        state = PlayerState[data["state"]]
+        return cls(id=data["id"], state=state)
 
 class Sage(Player):
     role = "Sage"
     
-    def __init__(self, id, game):
-        super().__init__(id, game)
+    def __init__(self, id, state = PlayerState.ALIVE):
+        super().__init__(id, state)
         self.role = self.__class__.role  # Explicitly set the role
 
     async def action(self):
         if self.state == PlayerState.ALIVE:
             sage_choice = await get_choice(self.id)
+            print(sage_choice.role)
             if isinstance(sage_choice, Werewolf):
-                MessageSender.send_to_person(self.id, "Player you've chosen IS a werewolf!")
+                return("Player you've chosen IS a werewolf!")
             else:
-                MessageSender.send_to_person(self.id, "Player you've chosen IS NOT a werewolf!")
+                return("Player you've chosen IS NOT a werewolf!")
             
 
     def to_dict(self):
@@ -109,22 +122,22 @@ class Sage(Player):
 
     @classmethod
     def from_dict(cls, data):
-        player_data = Player.from_dict(data)
-        return cls(id=player_data.id, state=player_data.state)
+        state = PlayerState[data["state"]]
+        return cls(id=data["id"], state=state)
 
 
 class Medic(Player):
     role = "Medic"
     
-    def __init__(self, id, game):
-        super().__init__(id, game)
+    def __init__(self, id, state = PlayerState.ALIVE):
+        super().__init__(id, state)
         self.role = self.__class__.role  # Explicitly set the role
 
     async def action(self):
         if self.state == PlayerState.ALIVE:
             medic_choice = await get_choice(self.id)
             medic_choice.protection_state = ProtectionState.PROTECTED
-            self.game.controller.messege_sender.send_to_person(self.id, "Player you've chosen will be protected!")
+            return("Player you've chosen will be protected!")
 
     def to_dict(self):
         base_data = super().to_dict()
@@ -133,21 +146,21 @@ class Medic(Player):
 
     @classmethod
     def from_dict(cls, data):
-        player_data = Player.from_dict(data)
-        return cls(id=player_data.id, state=player_data.state)
+        state = PlayerState[data["state"]]
+        return cls(id=data["id"], state=state)
     
 
 class Fox(Player):
     role = "fox"
     
-    def __init__(self, id, game):
-        super().__init__(id, game)
+    def __init__(self, id, state = PlayerState.ALIVE):
+        super().__init__(id, state)
         self.role = self.__class__.role  # Explicitly set the role
 
     async def action(self):
         if self.state == PlayerState.ALIVE:
-            print("Fox hides away from the werewolfs")
             self.ProtectionState = ProtectionState.PROTECTED
+            return("Fox hides away from the werewolfs")
 
     def to_dict(self):
         base_data = super().to_dict()
@@ -156,6 +169,6 @@ class Fox(Player):
 
     @classmethod
     def from_dict(cls, data):
-        player_data = Player.from_dict(data)
-        return cls(id=player_data.id, state=player_data.state)
+        state = PlayerState[data["state"]]
+        return cls(id=data["id"], state=state)
     

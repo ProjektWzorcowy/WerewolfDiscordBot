@@ -28,7 +28,7 @@ class GameController:
         p_ids = self.players_ids.copy()
 
         if len(p_ids) < 3:
-            MessageSender.send_to_gamechannel("The number of players is too low! Cannot start a game")
+            await self.messege_sender.send_to_gamechannel("The number of players is too low! Cannot start a game")
             raise ValueError("The number of players is too low to start the game.")
 
         role_number = 1  # Starting role number
@@ -40,7 +40,7 @@ class GameController:
             
             player_id = random.choice(p_ids)
             factory = factory_class()
-            player = factory.create_player(player_id, self.game)
+            player = factory.create_player(player_id)
             
             self.game.add_player(player)
             
@@ -73,8 +73,13 @@ class GameController:
         while not self.game.check_game_over():
             await self.game.start_night()
             # TODO: Make it so the game waits for a set time, rather than waiting for all actions to be taken
-            await self.game.start_day()
-            # TODO: Same
             self.game.update_alive_players()
+            if(not self.game.check_game_over):
+                await self.game.start_day()
+                # TODO: Same
+                self.game.update_alive_players()
 
-        self.messege_sender.send_to_gamechannel("Game ends! The winning team is: " + self.game.winning_team + "!")
+        await self.messege_sender.send_to_gamechannel("Game ends! The winning team is: " + self.game.winning_team + "!")
+        self.players_ids.clear()
+        self.owner_id = None
+        self.game = LurkingWerewolf(self)

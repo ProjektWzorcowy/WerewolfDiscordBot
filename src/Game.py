@@ -53,7 +53,7 @@ class Game:
         for player in self.players:
             if player.id == most_voted:
                 player.die()
-                user = bot.fetch_user(player.id)
+                user = await bot.fetch_user(player.id)
                 await self.controller.messege_sender.send_to_gamechannel(f'{user.name} got executed!')
 
         self.votes.clear()
@@ -68,18 +68,19 @@ class Game:
                 self.vote(werewolf, targeted_player)
         await self.tally_votes()
 
-async def voting(self):
-    async def handle_vote(player):
-        targeted_player = await get_choice(player.id)
-        self.vote(player, targeted_player)
-    # Rather than voting one by one, we handle them all at the same time:
-    voting_tasks = [handle_vote(player) for player in self.alive_players]
-    await asyncio.gather(*voting_tasks)
+    async def voting(self):
+        async def handle_vote(player):
+            await self.controller.messege_sender.send_to_person(player.id, "Choose a person to LYNCH")
+            targeted_player = await get_choice(player.id)
+            self.vote(player, targeted_player)
+        # Rather than voting one by one, we handle them all at the same time:
+        voting_tasks = [handle_vote(player) for player in self.alive_players]
+        await asyncio.gather(*voting_tasks)
 
-    await self.tally_votes()
+        await self.tally_votes()
 
-async def get_next_role(self, role_number):
-    pass
+    async def get_next_role(self, role_number):
+        pass
 
 class LurkingWerewolf(Game):
     def check_game_over(self):
@@ -119,7 +120,7 @@ class LurkingWerewolf(Game):
     async def werewolf_voting(self):
         async def handle_vote(player):
             targeted_player = await get_choice(player.id)
-            self.werewolf_vote(player, targeted_player)
+            await self.werewolf_vote(player, targeted_player)
         # Rather than voting one by one, we handle them all at the same time:
         voting_tasks = [asyncio.create_task(handle_vote(werewolf)) for werewolf in self.werewolves if werewolf.state == PlayerState.ALIVE]
         await asyncio.gather(*voting_tasks)
@@ -130,19 +131,21 @@ class LurkingWerewolf(Game):
     async def start_night(self):
         self.phase = "night"
         print("Night begins. Players take their actions.")
-        villagers_action_tasks = [asyncio.create_task(v.action()) for v in self.villagers]
+        villagers_action_tasks = [asyncio.create_task(self.controller.messege_sender.send_to_person(v.id, await v.action())) for v in self.villagers]
         werewolf_victim = await self.werewolf_voting()
+        print(werewolf_victim.id)
         # We wait for all villager tasks.
         await asyncio.gather(*villagers_action_tasks)
         #We kill the attacke player, as long as they were not protected
-        if(werewolf_victim.ProtectionState == ProtectionState.UNPROTECTED):
+        if(werewolf_victim.protection_state == ProtectionState.UNPROTECTED):
             werewolf_victim.die()
+            await self.controller.messege_sender.send_to_person(werewolf_victim.id, "You were KILLED by werewolves!")
         #Reset the protection state
         for player in self.players:
-            player.ProtectionState = ProtectionState.UNPROTECTED
+            player.protection_state = ProtectionState.UNPROTECTED
 
     async def get_next_role_factory(self, role_number):
-        if(role_number == 2 | role_number == 8 | role_number == 13):
+        if(role_number == 2 or role_number == 8 or role_number == 13):
             return WerewolfFactory
         if(role_number == 3):
             return SageFactory
@@ -227,7 +230,7 @@ class CrazyFox(Game):
     async def get_next_role_factory(self, role_number):
         if(role_number == 2):
             return FoxFactory
-        if(role_number == 3 | role_number == 8 | role_number == 13):
+        if(role_number == 3 or role_number == 8 or role_number == 13):
             return WerewolfFactory
         if(role_number == 4):
             return SageFactory
@@ -257,7 +260,7 @@ class Politics(Game):
         self.villagers = [p for p in self.players if not isinstance(p, Werewolf)]
 
     async def get_next_role_factory(self, role_number):
-        if(role_number == 2 | role_number == 7  | role_number  == 11):
+        if(role_number == 2 or role_number == 7  or role_number  == 11):
             return WerewolfFactory
         return VillagerFactory
 

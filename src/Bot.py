@@ -89,10 +89,10 @@ async def start(ctx):
         await ctx.send("Game preparation started, waiting for players to join...")
         game_controller.set_owner_id(ctx.author.id)
         game_controller.set_started_status()
-        game_controller.set_message_sender(bot, ctx)
+        game_controller.set_message_sender(bot, ctx.channel.id)
         await join(ctx)
     else:
-        user = bot.fetch_user(game_controller.owner_id)
+        user = await bot.fetch_user(game_controller.owner_id)
         await ctx.send(f'Game was already started! Owner of game is: {user.mention}')
 
 
@@ -109,7 +109,7 @@ async def join(ctx):
 @bot.command()
 async def begin(ctx):
     if game_controller.game.phase == 'waiting' and ctx.author.id is game_controller.owner_id:
-        player_mentions = get_player_mentions()
+        player_mentions = await get_player_mentions()
         await game_controller.set_roles()
         await ctx.send(f'Game has begun! List of players: {player_mentions}')
         await game_controller.start_game()
