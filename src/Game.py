@@ -21,6 +21,7 @@ class Game:
 
     def add_player(self, player):
         self.players.append(player)
+        self.alive_players.append(player)
     
     def split_into_teams():
         pass
